@@ -3,7 +3,7 @@ from environment import TSCEnv
 from world import World
 from generator import LaneVehicleGenerator
 from agent import SOTLAgent
-from metric import TravelTimeMetric
+from metric import TravelTimeMetric, QueueLengthMetric, DelayTimeMetric, StopTimesMetric
 import argparse
 
 # parse args
@@ -24,8 +24,7 @@ for i in world.intersections:
     agents.append(SOTLAgent(action_space, i, world))
 
 # create metric
-metric = TravelTimeMetric(world)
-
+metric = [TravelTimeMetric(world), QueueLengthMetric(world), DelayTimeMetric(world), StopTimesMetric(world)]
 # create env
 env = TSCEnv(world, agents, metric)
 
@@ -41,7 +40,8 @@ for i in range(args.steps):
     # print(len(env.world.get_info('vehicles')))
     # print(len(env.metric.vehicle_enter_time))
     # print(len(env.metric.travel_times))
-    env.metric.update()
+    for metric_obj in env.metric:
+        metric_obj.update()
     # print('====================================')
     # env.metric.update()
     # print(world.intersections[0]._current_phase, end=",")
@@ -63,4 +63,7 @@ print(env.eng.get_average_travel_time())
 # print(len(env.world.get_info('vehicles')))
 # print(len(env.metric.vehicle_enter_time))
 # print(len(env.metric.travel_times))
-print("Final Travel Time is %.4f" % env.metric.update(done=True))
+print("Final Travel Time is %.4f" % env.metric[0].get_info())
+print("Average Queue Length is %.4f" % env.metric[1].get_info())
+print("Average Delay Time is %.4f" % env.metric[2].get_info())
+print("Average Stop Times is %.4f" % env.metric[3].get_info())

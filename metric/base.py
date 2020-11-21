@@ -4,3 +4,6 @@ class BaseMetric(object):
 
     def update(self):
         raise NotImplementedError()
+    
+    def reset(self):
+        raise NotImplementedError()

@@ -7,7 +7,7 @@ class TravelTimeMetric(BaseMetric):
     For each vehicle, travel time measures time between it entering and leaving the roadnet.
     """
     def __init__(self, world):
-        self.world = world
+        super().__init__(world)
         self.world.subscribe(["vehicles", "time"])
         self.vehicle_enter_time = {}
         self.travel_times = []
@@ -25,5 +25,12 @@ class TravelTimeMetric(BaseMetric):
                 self.travel_times.append(current_time - self.vehicle_enter_time[vehicle])
                 del self.vehicle_enter_time[vehicle]
         
+        return np.mean(self.travel_times) if len(self.travel_times) else 0
+    
+    def reset(self):
+        self.vehicle_enter_time = {}
+        self.travel_times = []
+    
+    def get_info(self):
         return np.mean(self.travel_times) if len(self.travel_times) else 0
         

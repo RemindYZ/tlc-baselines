@@ -3,7 +3,7 @@ from environment import TSCEnv
 from world import World
 from generator import LaneVehicleGenerator
 from agent import MaxPressureAgent
-from metric import TravelTimeMetric
+from metric import TravelTimeMetric, QueueLengthMetric
 import argparse
 
 # parse args
@@ -27,7 +27,8 @@ for i in world.intersections:
     ))
 
 # create metric
-metric = TravelTimeMetric(world)
+metric = [TravelTimeMetric(world), QueueLengthMetric(world)]
+world.subscribe("lane_waiting_time_count")
 
 # create env
 env = TSCEnv(world, agents, metric)
@@ -40,15 +41,18 @@ for i in range(args.steps):
     for agent_id, agent in enumerate(agents):
         actions.append(agent.get_action(obs[agent_id]))
     obs, rewards, dones, info = env.step(actions)
-    env.metric.update()
+    for metric_obj in env.metric:
+        metric_obj.update()
     #print(world.intersections[0]._current_phase, end=",")
     # print(obs, actions)
-    if i % 100 == 50:
-        print(str(i)+'-th steps')
-        print(env.eng.get_average_travel_time())
-        print("=====================")
+    # if i % 100 == 50:
+    #     print(str(i)+'-th steps')
+    #     print(env.eng.get_average_travel_time())
+    #     print("=====================")
     #print(obs)
     #print(rewards)
     # print(info["metric"])
 
-print("Final Travel Time is %.4f" % env.metric.update(done=True))
+print("Final Travel Time is %.4f" % env.metric[0].update(done=True))
+print("Average Queue Length is %.4f" % env.metric[1].update())
+print("Average Delay Time is %.4f" % (sum([v for v in env.world.vehicle_waiting_time.values()])/len(env.world.vehicle_waiting_time)))
