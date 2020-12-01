@@ -10,3 +10,5 @@ exp/
 *.log
 *.logs
 data/
+*.json
+config/
