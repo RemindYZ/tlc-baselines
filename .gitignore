@@ -9,3 +9,4 @@ local/
 exp/
 *.log
 *.logs
+data/

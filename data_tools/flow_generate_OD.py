@@ -39,7 +39,7 @@ for vir_inter in virtual_intersections:
             out_approach = road
     assert in_approach
     assert out_approach
-    intersection_dict[vir_inter["id"]]={"in_approach": in_approach, "out_approach": out_approach}
+    intersection_dict[vir_inter["id"]] = {"in_approach": in_approach, "out_approach": out_approach}
 
 # OD矩阵转换为概率 & route list
 route_p_list = []
@@ -48,8 +48,7 @@ for in_intersection in od_matrix.keys():
         prob = od_matrix[in_intersection][out_intersection] / 3600
         in_approach = intersection_dict[in_intersection]["in_approach"]
         out_approach = intersection_dict[out_intersection]["out_approach"]
-        route_p_list.append({"route": [in_approach, out_approach], "prob":prob})
-
+        route_p_list.append({"route": [in_approach, out_approach], "prob": prob})
 
 
 # 车流生成
@@ -58,7 +57,7 @@ flow_list = []
 rd.seed(seed)
 for i in range(1, stage_time, 1):
     for route_p in route_p_list:
-        if rd.uniform(0,1) < route_p['prob']:
+        if rd.uniform(0, 1) < route_p['prob']:
             flow_list.append({"vehicle": vehicle, "route": route_p['route'], "interval": interval, "startTime": i, "endTime": i})
 
 with open(output_file, 'w') as f:

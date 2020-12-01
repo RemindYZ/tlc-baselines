@@ -3,13 +3,13 @@ import numpy as np
 
 class StopTimesMetric(BaseMetric):
     """
-    Calculate Average Stop tims
+    Calculate Average Stop times
     """
     def __init__(self, world):
         super().__init__(world)
         self.stoptimes = {}
         self.speed_stop = 0.1
-        self.speed_run = 100
+        self.speed_run = 3
         self.vehicle_status = {}
 
     def update(self):

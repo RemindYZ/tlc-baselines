@@ -1,6 +1,7 @@
 import numpy as np
 from . import BaseGenerator
 
+
 class LaneVehicleGenerator(BaseGenerator):
     """
     Generate State or Reward based on statistics of lane vehicles.
@@ -17,6 +18,7 @@ class LaneVehicleGenerator(BaseGenerator):
         "all" means take average of all lanes
     negative : boolean, whether return negative values (mostly for Reward)
     """
+
     def __init__(self, world, I, fns, in_only=False, average=None, negative=False):
         self.world = world
         self.I = I
@@ -29,7 +31,8 @@ class LaneVehicleGenerator(BaseGenerator):
             roads = I.roads
         for road in roads:
             from_zero = (road["startIntersection"] == I.id) if self.world.RIGHT else (road["endIntersection"] == I.id)
-            self.lanes.append([road["id"] + "_" + str(i) for i in range(len(road["lanes"]))[::(1 if from_zero else -1)]])
+            self.lanes.append(
+                [road["id"] + "_" + str(i) for i in range(len(road["lanes"]))[::(1 if from_zero else -1)]])
 
         # subscribe functions
         self.world.subscribe(fns)
@@ -63,7 +66,7 @@ class LaneVehicleGenerator(BaseGenerator):
                 else:
                     road_result = np.array(road_result)
                 fn_result = np.append(fn_result, road_result)
-            
+
             if self.average == "all":
                 fn_result = np.mean(fn_result)
             ret = np.append(ret, fn_result)
@@ -71,8 +74,10 @@ class LaneVehicleGenerator(BaseGenerator):
             ret = ret * (-1)
         return ret
 
+
 if __name__ == "__main__":
     from world import World
+
     world = World("examples/config.json", thread_num=1)
     laneVehicle = LaneVehicleGenerator(world, world.intersections[0], ["count"], False, "road")
     for _ in range(100):

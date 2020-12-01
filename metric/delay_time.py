@@ -1,6 +1,7 @@
 from . import BaseMetric
 import numpy as np
 
+
 class DelayTimeMetric(BaseMetric):
     """
     Calculate average delay time for each vehicle
@@ -25,4 +26,3 @@ class DelayTimeMetric(BaseMetric):
     
     def get_info(self):
         return np.mean([v for v in self.vehicle_delaytime.values()]) if len(self.vehicle_delaytime.values()) else 0
-            
