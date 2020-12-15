@@ -3,7 +3,7 @@ import os.path as osp
 import cityflow
 
 import numpy as np
-from math import atan2, pi
+from math import atan2, pi, sqrt
 import sys
 
 
@@ -17,11 +17,18 @@ def _get_direction(road, out=True):
     tmp = atan2(x, y)
     return tmp if tmp >= 0 else (tmp + 2 * pi)
 
+def _get_length(road):
+    x = road["points"][1]["x"] - road["points"][0]["x"]
+    y = road["points"][1]["y"] - road["points"][0]["y"]
+    return sqrt(x**2+y**2)
+
 
 class Intersection(object):
     def __init__(self, intersection, world):
         self.id = intersection["id"]
         self.eng = world.eng
+
+        self.width = intersection["width"]
 
         # incoming and outgoing roads of each intersection, clock-wise order from North
         self.roads = []
@@ -72,6 +79,9 @@ class Intersection(object):
             self.phase_available_lanelinks.append(phase_available_lanelinks)
             phase_available_startlanes = list(set(phase_available_startlanes))
             self.phase_available_startlanes.append(phase_available_startlanes)
+        
+        self.rightphase_available_startlanes = list(set([lanelinks[0] for roadlink_id in phases[0]["availableRoadLinks"] \
+            for lanelinks in self.lanelinks_of_roadlink[roadlink_id]]))
 
         self.reset()
 
@@ -154,12 +164,17 @@ class World(object):
         print("parsing roads...")
         self.all_roads = []
         self.all_lanes = []
+        self.all_roads_info = {}
+        self.all_lanes_info = {}
 
         for road in self.roadnet["roads"]:
             self.all_roads.append(road["id"])
+            self.all_roads_info[road["id"]] = road
+            self.all_roads_info[road["id"]]["length"] = _get_length(road)
             i = 0
-            for _ in road["lanes"]:
+            for lane in road["lanes"]:
                 self.all_lanes.append(road["id"] + "_" + str(i))
+                self.all_lanes_info[road["id"] + "_" + str(i)] = lane
                 i += 1
 
             iid = road["startIntersection"]
@@ -185,7 +200,8 @@ class World(object):
             "lane_waiting_time_count": self.get_lane_waiting_time_count,
             "lane_delay": self.get_lane_delay,
             "vehicle_trajectory": self.get_vehicle_trajectory,
-            "history_vehicles": self.get_history_vehicles
+            "history_vehicles": self.get_history_vehicles,
+            "vehicle_speed": self.eng.get_vehicle_speed
         }
         self.fns = []
         self.info = {}
@@ -260,13 +276,14 @@ class World(object):
     def get_lane_delay(self):
         # the delay of each lane: 1 - lane_avg_speed/speed_limit
         # set speed limit to 11.11 by default
-        speed_limit = 11.11
+        # speed_limit = 11.11
         lane_vehicles = self.eng.get_lane_vehicles()
         lane_delay = {}
         lanes = self.all_lanes
         vehicle_speed = self.eng.get_vehicle_speed()
 
         for lane in lanes:
+            speed_limit = self.all_lanes_info[lane]["maxSpeed"]
             vehicles = lane_vehicles[lane]
             lane_vehicle_count = len(vehicles)
             lane_avg_speed = 0.0

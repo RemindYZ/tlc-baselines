@@ -16,11 +16,12 @@ class GTAgent(BaseAgent):
         self.delta_t = delta_t # 预估时间
         self.yellow_time = yellow_time #黄灯时间
         self.right_lane = ['road_2_1_2_2', 'road_1_0_1_2', 'road_0_1_0_2', 'road_1_2_3_2'] # 不考虑右转车道影响
+        self.vehicle_gap = 7.5
+
         self.t_min = 3 # 最短绿灯时间
         self.t_max = 30 # 最长绿灯时间
         self.weight = [0.55, 0.45] # 权重比例
         self.speed_threshold = 0.1
-        self.road_length = 270
         self.pareto = 1
         self.n_phase = len(self.I.phases)
         if len(self.weight) < self.n_phase:
@@ -66,15 +67,15 @@ class GTAgent(BaseAgent):
             for lane in s_lanes:
                 lane_vehicle_id_list = lane_vehicles[lane]
                 ql = lane_waiting_count[lane]
+                road_length = self.world.all_roads_info[lane[:-2]]["length"] - self.I.width
                 if i == 0:
-                    departure = sum([sgn((self.road_length - vehicle_distance[v_id])/vehicle_speed[v_id] < self.delta_t) \
+                    departure = sum([sgn((road_length - vehicle_distance[v_id])/vehicle_speed[v_id] < self.delta_t) \
                         for v_id in lane_vehicle_id_list if vehicle_speed[v_id] >= self.speed_threshold])
-                    arrival = sum([sgn((self.road_length - vehicle_distance[v_id])/vehicle_speed[v_id] >= self.delta_t) \
+                    arrival = sum([sgn((road_length - vehicle_distance[v_id])/vehicle_speed[v_id] >= self.delta_t) \
                         for v_id in lane_vehicle_id_list if vehicle_speed[v_id] >= self.speed_threshold])
                 else:
                     departure = 0
-                    # 7.5为车辆长度+最小gap
-                    arrival = sum([sgn((self.road_length - vehicle_distance[v_id]) >= ql * 7.5) for v_id in lane_vehicle_id_list])
+                    arrival = sum([sgn((road_length - vehicle_distance[v_id]) >= ql * self.vehicle_gap) for v_id in lane_vehicle_id_list])
                 payoff += ql + arrival - departure
             res_payoff.append(payoff)
         return res_payoff
@@ -86,15 +87,16 @@ class GTAgent(BaseAgent):
             for lane in s_lanes:
                 lane_vehicle_id_list = lane_vehicles[lane]
                 ql = lane_waiting_count[lane]
+                road_length = self.world.all_roads_info[lane[:-2]]["length"] - self.I.width
+                max_speed = self.world.all_lanes_info[lane]["maxSpeed"]
                 if i == 1:
-                    departure = sum([sgn((self.delta_t - self.yellow_time) * 16.67 / 2 > (self.road_length - vehicle_distance[v_id])) \
+                    departure = sum([sgn((self.delta_t - self.yellow_time) * max_speed / 2 > (road_length - vehicle_distance[v_id])) \
                         for v_id in lane_vehicle_id_list])
-                    arrival = sum([sgn((self.road_length - vehicle_distance[v_id])/vehicle_speed[v_id] >= self.delta_t) \
+                    arrival = sum([sgn((road_length - vehicle_distance[v_id])/vehicle_speed[v_id] >= self.delta_t) \
                         for v_id in lane_vehicle_id_list if vehicle_speed[v_id] >= self.speed_threshold])
                 else:
                     departure = 0
-                    # 7.5为车辆长度+最小gap
-                    arrival = sum([sgn((self.road_length - vehicle_distance[v_id]) >= ql * 7.5) for v_id in lane_vehicle_id_list])
+                    arrival = sum([sgn((road_length - vehicle_distance[v_id]) >= ql * self.vehicle_gap) for v_id in lane_vehicle_id_list])
                 payoff += ql + arrival - departure
             res_payoff.append(payoff)
         return res_payoff
